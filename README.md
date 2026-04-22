@@ -30,13 +30,23 @@ Claude Code's [channels](https://code.claude.com/docs/en/channels.md) let extern
    /plugin install socketchat@juanheyns-claude-plugins
    ```
 
-2. Exit and re-launch Claude so the channel gets loaded:
+2. Relaunch Claude with the channel explicitly loaded. Which flag depends on your account:
+
+   **Team/Enterprise with socketchat on the org allowlist** (no dialog — recommended for unattended work):
 
    ```bash
-   claude
+   claude --channels plugin:socketchat@juanheyns-claude-plugins
    ```
 
-   On launch, socketchat binds a Unix socket under `~/.claude/channels/socketchat/sessions/`.
+   **Pro/Max or anyone not on an org allowlist** (interactive confirmation dialog on launch):
+
+   ```bash
+   claude --dangerously-load-development-channels plugin:socketchat@juanheyns-claude-plugins
+   ```
+
+   Channels are currently a research preview in Claude Code. The normal `--channels` flag only accepts plugins on either Anthropic's maintained allowlist or your organization's `allowedChannelPlugins` managed setting. socketchat is a third-party plugin, so Pro/Max users must use the `--dangerously-load-development-channels` form until an admin whitelists it.
+
+   See [Deployment](docs/deployment.md) for the enterprise setup and unattended workflows.
 
 3. From any shell, invoke the installed client:
 

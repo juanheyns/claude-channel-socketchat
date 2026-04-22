@@ -60,10 +60,11 @@ For ephemeral-container use, you can align them by setting both to the same valu
 ```bash
 ID=$(uuidgen)
 SOCKET_CHAT_INSTANCE_ID=$ID \
-  claude --session-id "$ID"
+  claude --session-id "$ID" \
+    --channels plugin:socketchat@juanheyns-claude-plugins
 ```
 
-(Assumes the plugin is already installed from the marketplace. `SOCKET_CHAT_INSTANCE_ID` is inherited from the shell environment into the plugin subprocess.)
+(Assumes the plugin is installed from the marketplace and whitelisted in your org's [`allowedChannelPlugins`](deployment#enterprise-setup-no-confirmation-dialog) managed setting. Without that whitelist, substitute `--dangerously-load-development-channels` — which triggers an interactive confirmation dialog on each launch.)
 
 Now the same `$ID` is:
 - Claude's transcript filename: `~/.claude/projects/<cwd-key>/$ID.jsonl`

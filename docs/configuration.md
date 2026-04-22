@@ -61,8 +61,10 @@ The plugin is installed from the marketplace; its MCP subprocess inherits the en
 ```bash
 SOCKET_CHAT_INSTANCE_ID=7c9f2a43-8e1d-4f66-bd42-9a3e7c1b2f88 \
 SOCKET_CHAT_LOG_FILE=/var/log/socketchat.log \
-  claude
+  claude --channels plugin:socketchat@juanheyns-claude-plugins
 ```
+
+(Substitute `--dangerously-load-development-channels` if you're not on a Team/Enterprise plan that has whitelisted socketchat — see [Deployment](deployment#enterprise-setup-no-confirmation-dialog).)
 
 Works for per-invocation overrides. Ideal for orchestrators and scripts.
 

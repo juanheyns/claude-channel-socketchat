@@ -27,6 +27,16 @@ Install the plugin from the marketplace. Inside Claude Code:
 /plugin install socketchat@juanheyns-claude-plugins
 ```
 
+Relaunch Claude with the channel explicitly loaded. Two flags, depending on account tier:
+
+```bash
+# Team/Enterprise with socketchat on the org allowlist (no dialog, unattended-capable)
+claude --channels plugin:socketchat@juanheyns-claude-plugins
+
+# Pro/Max or not yet whitelisted (triggers interactive confirmation dialog)
+claude --dangerously-load-development-channels plugin:socketchat@juanheyns-claude-plugins
+```
+
 Then push a message from any shell:
 
 ```bash
@@ -34,6 +44,8 @@ socketchat send '{"hello":"from ops"}'
 ```
 
 The agent sees the message as a `<channel source="socketchat" ...>` event and replies via the `reply` tool. The reply comes back on the sender's socket.
+
+> **For unattended / CI use:** the dialog on the Pro/Max path blocks `claude -p` orchestration. Team/Enterprise plans can add socketchat to `allowedChannelPlugins` in managed settings — see [Deployment](deployment#enterprise-setup-no-confirmation-dialog).
 
 See [Getting started](getting-started) for the `--plugin-dir` development path, manual MCP registration, and prerequisite details.
 

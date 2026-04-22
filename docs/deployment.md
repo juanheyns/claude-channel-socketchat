@@ -11,19 +11,62 @@ socketchat was designed for **unattended Claude Code running in ephemeral contai
 
 Your orchestrator spins up a container, runs `claude -p` in a resumable loop, and reaps the container when done. Claude's state (transcript, memory) needs to survive container rotation. socketchat gives you a stable channel for pausing, signalling, and delivering approvals.
 
+### Enterprise setup (no confirmation dialog)
+
+Channels are a Claude Code research preview. During this phase the regular `--channels` flag only accepts plugins on either Anthropic's maintained allowlist or your organization's `allowedChannelPlugins` managed setting. socketchat is third-party, so on Team and Enterprise plans your admin needs to whitelist it — once they do, users launch with `--channels` (no dialog), which is what makes fully-unattended `claude -p` operation possible.
+
+Admin adds to managed settings (Team/Enterprise plans only):
+
+```json
+{
+  "channelsEnabled": true,
+  "allowedChannelPlugins": [
+    { "marketplace": "juanheyns-claude-plugins", "plugin": "socketchat" }
+  ]
+}
+```
+
+Two things to know about `allowedChannelPlugins`:
+
+- **It replaces the Anthropic default list entirely.** If you want to keep Telegram/Discord/iMessage in addition to socketchat, list them too (`{ "marketplace": "claude-plugins-official", "plugin": "telegram" }`, etc.).
+- **It requires `channelsEnabled: true`.** Without that master switch, no channels run at all — including the dev flag.
+
+Once set, users can launch Claude with socketchat active and no approval prompt:
+
+```bash
+claude --channels plugin:socketchat@juanheyns-claude-plugins
+```
+
+This is the path that unlocks unattended `claude -p` orchestration.
+
+### Pro/Max or non-whitelisted fallback
+
+If you're not on Team/Enterprise, or the plugin hasn't been added to your org's allowlist yet, use the development-channels flag. Claude Code shows an interactive confirmation dialog on every launch — which blocks fully-autonomous `claude -p`:
+
+```bash
+claude --dangerously-load-development-channels plugin:socketchat@juanheyns-claude-plugins
+```
+
+Workarounds without the org whitelist:
+
+- **Supervised first launch**: have a human approve the dialog once when the container starts; subsequent `--resume` invocations within the same installed Claude Code may reuse the approval (verify with your version).
+- **Long-lived Claude process**: one approval covers the process lifetime; run many tasks in sequence without restarting.
+- **Move to the whitelist path**: the cleanest long-term solution if your team has a Team/Enterprise plan.
+
 ### Id unification
 
-Assumes the plugin is already installed from the marketplace. Claude's `--session-id` requires a UUID, so generate one per task and reuse it for the plugin's instance id:
+Assumes the plugin is already installed from the marketplace and enabled in managed settings. Claude's `--session-id` requires a UUID, so generate one per task and reuse it for the plugin's instance id:
 
 ```bash
 ID=$(uuidgen)
 
 SOCKET_CHAT_INSTANCE_ID=$ID \
   claude --session-id "$ID" \
+    --channels plugin:socketchat@juanheyns-claude-plugins \
     -p "run the thing"
 ```
 
-`SOCKET_CHAT_INSTANCE_ID` is inherited from the shell env into the plugin subprocess; no flag needed. Your orchestrator tracks `$ID` and whatever it maps to (task name, run id, etc.) in its own records.
+`SOCKET_CHAT_INSTANCE_ID` is inherited from the shell env into the plugin subprocess. Substitute `--dangerously-load-development-channels` for `--channels` if you're on the non-whitelisted fallback path. Your orchestrator tracks `$ID` and whatever it maps to (task name, run id, etc.) in its own records.
 
 That single id becomes:
 
@@ -144,8 +187,11 @@ ENV SOCKET_CHAT_DIR=/run/socketchat
 VOLUME /run/socketchat
 
 # Override at runtime: SOCKET_CHAT_INSTANCE_ID, ANTHROPIC_API_KEY, --session-id, etc.
-ENTRYPOINT ["claude"]
+ENTRYPOINT ["claude", \
+  "--channels", "plugin:socketchat@juanheyns-claude-plugins"]
 ```
+
+> **Prerequisite for the `--channels` flag**: your org must have socketchat in [`allowedChannelPlugins`](#enterprise-setup-no-confirmation-dialog) (Team/Enterprise). If not, substitute `--dangerously-load-development-channels` — but be aware that form shows an interactive dialog on every launch, which blocks fully-autonomous containers.
 
 If you need full offline reproducibility (no network reach at build time either), clone the plugin into the image and load it with `--plugin-dir`:
 

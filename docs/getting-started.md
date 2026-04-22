@@ -61,15 +61,31 @@ Works, but you lose the plugin niceties (versioning, keyword discovery, marketpl
 
 ## Start Claude with the channel loaded
 
-Once the plugin is installed from the marketplace, it loads automatically — no flags needed:
+Channels are currently a Claude Code research preview. You have to opt in explicitly at launch, and which flag to use depends on your account tier.
+
+### Team/Enterprise (recommended for unattended work)
+
+If your org admin has added socketchat to `allowedChannelPlugins` in managed settings (see [Deployment](deployment#enterprise-setup-no-confirmation-dialog) for the exact JSON), just launch with:
 
 ```bash
-claude
+claude --channels plugin:socketchat@juanheyns-claude-plugins
 ```
 
-On launch, Claude Code spawns the plugin's MCP subprocess, which binds a Unix socket at `~/.claude/channels/socketchat/sessions/<instance-id>.sock`. You can verify it's loaded by running `socketchat ls` (see below) in another terminal — a session should appear in the output.
+No dialog. Suitable for `claude -p` and CI.
 
-If you installed the plugin while Claude was already running, exit and relaunch — `/reload-plugins` works too.
+### Pro/Max (or before your org whitelists socketchat)
+
+Use the development-channels flag. Claude Code shows an interactive confirmation dialog on launch — approve to continue:
+
+```bash
+claude --dangerously-load-development-channels plugin:socketchat@juanheyns-claude-plugins
+```
+
+The dialog blocks fully-unattended use of `claude -p`. Workarounds: supervise the first launch, or get socketchat into your org's `allowedChannelPlugins` list.
+
+### After launch
+
+Either way, on successful startup Claude Code spawns the plugin's MCP subprocess, which binds a Unix socket at `~/.claude/channels/socketchat/sessions/<instance-id>.sock`. Verify by running `socketchat ls` in another terminal — a session should appear.
 
 ## Install the client helper
 
@@ -132,10 +148,11 @@ Each line you type must be valid JSON. Responses (acks, replies) print with a `<
 
 ## Pin the instance id
 
-Pass `SOCKET_CHAT_INSTANCE_ID` in the shell env to get a predictable socket path:
+Pass `SOCKET_CHAT_INSTANCE_ID` in the shell env to get a predictable socket path. Examples below use `--channels` (the org-approved flag); substitute `--dangerously-load-development-channels` if you're on Pro/Max:
 
 ```bash
-SOCKET_CHAT_INSTANCE_ID=$(uuidgen) claude
+SOCKET_CHAT_INSTANCE_ID=$(uuidgen) \
+  claude --channels plugin:socketchat@juanheyns-claude-plugins
 ```
 
 Now the socket is at `~/.claude/channels/socketchat/sessions/<UUID>.sock`.
@@ -144,7 +161,9 @@ For full id unification, use the **same UUID** for `SOCKET_CHAT_INSTANCE_ID` and
 
 ```bash
 ID=$(uuidgen)
-SOCKET_CHAT_INSTANCE_ID=$ID claude --session-id "$ID"
+SOCKET_CHAT_INSTANCE_ID=$ID \
+  claude --session-id "$ID" \
+    --channels plugin:socketchat@juanheyns-claude-plugins
 ```
 
 > **Important**: Claude Code's `--session-id` requires a valid UUID (e.g. `7c9f2a43-8e1d-4f66-bd42-9a3e7c1b2f88`), not an arbitrary string. `SOCKET_CHAT_INSTANCE_ID` accepts `[A-Za-z0-9._-]` up to 128 chars, so a UUID works for both. `uuidgen` is available on macOS and most Linux distros.
