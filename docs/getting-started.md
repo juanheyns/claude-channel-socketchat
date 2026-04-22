@@ -25,7 +25,7 @@ The fastest way to install socketchat is through the [`juanheyns-claude-plugins`
 
 Claude Code fetches the plugin, registers its MCP server, and activates it as a channel. The socket binds at `~/.claude/channels/socketchat/sessions/<instance-id>.sock` on first session.
 
-To use the companion CLI (`client.ts`) for `ls`, `ping`, `send`, `chat`, and `log`, clone this repo separately:
+To use the companion CLI (`socketchat`) for `ls`, `ping`, `send`, `chat`, and `log`, clone this repo separately:
 
 ```bash
 git clone https://github.com/juanheyns/claude-channel-socketchat socketchat
@@ -59,12 +59,44 @@ claude --dangerously-load-development-channels server:socketchat
 
 Works, but you lose the plugin niceties (versioning, keyword discovery, marketplace update flow). Use only for quick one-off testing.
 
-## First round-trip
+## Start Claude with the channel loaded
 
-In another terminal, list active sessions:
+Once the plugin is installed from the marketplace, it loads automatically — no flags needed:
 
 ```bash
-./client.ts ls
+claude
+```
+
+On launch, Claude Code spawns the plugin's MCP subprocess, which binds a Unix socket at `~/.claude/channels/socketchat/sessions/<instance-id>.sock`. You can verify it's loaded by running `socketchat ls` (see below) in another terminal — a session should appear in the output.
+
+If you installed the plugin while Claude was already running, exit and relaunch — `/reload-plugins` works too.
+
+## Install the client helper
+
+The companion CLI lives inside the installed plugin at:
+
+```
+~/.claude/plugins/cache/juanheyns-claude-plugins/socketchat/<version>/client.ts
+```
+
+Add this function to your shell config (`~/.zshrc`, `~/.bashrc`, etc.) once:
+
+```bash
+socketchat() {
+  local dir=$(ls -d ~/.claude/plugins/cache/juanheyns-claude-plugins/socketchat/*/ | sort -V | tail -1)
+  bun "${dir}client.ts" "$@"
+}
+```
+
+Reopen your shell. The function picks the highest installed version automatically. All examples below use `socketchat <cmd>`; substitute `bun ~/.claude/plugins/cache/.../*/client.ts <cmd>` if you'd rather not alias.
+
+## First round-trip
+
+List active sessions:
+
+```bash
+socketchat ls
+# 7c9f2a43-...   2s   pid=12345   cwd=/Users/you/some/repo
 ```
 
 You should see one entry with the session's instance id, pid, and cwd.
@@ -72,14 +104,14 @@ You should see one entry with the session's instance id, pid, and cwd.
 Ping the server (server-only, doesn't reach Claude):
 
 ```bash
-./client.ts ping
+socketchat ping
 # pong from <id> (3ms)
 ```
 
 Send a message (this one does reach Claude):
 
 ```bash
-./client.ts send '{"hello":"world"}'
+socketchat send '{"hello":"world"}'
 ```
 
 The agent sees a `<channel source="socketchat" ...>` event in its context. Tell it in chat:
@@ -93,7 +125,7 @@ Send again. This time the client prints the reply text back.
 For back-and-forth exploration:
 
 ```bash
-./client.ts chat
+socketchat chat
 ```
 
 Each line you type must be valid JSON. Responses (acks, replies) print with a `<` prefix.
@@ -103,13 +135,24 @@ Each line you type must be valid JSON. Responses (acks, replies) print with a `<
 Pass `SOCKET_CHAT_INSTANCE_ID` in the shell env to get a predictable socket path:
 
 ```bash
-SOCKET_CHAT_INSTANCE_ID=task-42 claude
+SOCKET_CHAT_INSTANCE_ID=$(uuidgen) claude
 ```
 
-Now the socket is at `~/.claude/channels/socketchat/sessions/task-42.sock`. Combine with `claude --session-id task-42` for full id unification — see [deployment](deployment) for why.
+Now the socket is at `~/.claude/channels/socketchat/sessions/<UUID>.sock`.
+
+For full id unification, use the **same UUID** for `SOCKET_CHAT_INSTANCE_ID` and Claude's `--session-id`:
+
+```bash
+ID=$(uuidgen)
+SOCKET_CHAT_INSTANCE_ID=$ID claude --session-id "$ID"
+```
+
+> **Important**: Claude Code's `--session-id` requires a valid UUID (e.g. `7c9f2a43-8e1d-4f66-bd42-9a3e7c1b2f88`), not an arbitrary string. `SOCKET_CHAT_INSTANCE_ID` accepts `[A-Za-z0-9._-]` up to 128 chars, so a UUID works for both. `uuidgen` is available on macOS and most Linux distros.
+
+See [deployment](deployment) for why you'd do this.
 
 ## Next
 
 - [Architecture](architecture) — what's happening under the hood
 - [Wire protocol](protocol) — message schemas and routing
-- [CLI reference](cli) — all the `client.ts` subcommands
+- [CLI reference](cli) — all the `socketchat` subcommands

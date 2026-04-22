@@ -16,14 +16,14 @@ Override: `SOCKET_CHAT_LOG_FILE=/path/to/log`
 Tail with the client:
 
 ```bash
-./client.ts log -f
-./client.ts log task-42 -f
+socketchat log -f
+socketchat log 7c9f2a43-8e1d-4f66-bd42-9a3e7c1b2f88 -f
 ```
 
 Or directly:
 
 ```bash
-tail -F ~/.claude/channels/socketchat/logs/task-42.log
+tail -F ~/.claude/channels/socketchat/logs/7c9f2a43-8e1d-4f66-bd42-9a3e7c1b2f88.log
 ```
 
 Logs are also mirrored to stderr, so if you're running the plugin with `claude --debug`, they appear in Claude's debug output too.
@@ -81,19 +81,19 @@ With `jq`:
 
 ```bash
 # All inbound messages and their replies
-./client.ts log -f | jq 'select(.msg=="message_in" or .msg=="reply")'
+socketchat log -f | jq 'select(.msg=="message_in" or .msg=="reply")'
 
 # Only errors and warnings
-./client.ts log -f | jq 'select(.level!="info")'
+socketchat log -f | jq 'select(.level!="info")'
 
 # Connection churn
-./client.ts log -f | jq 'select(.msg | startswith("connection_"))'
+socketchat log -f | jq 'select(.msg | startswith("connection_"))'
 
 # Undelivered replies (client was gone or TTL expired)
-./client.ts log | jq 'select(.msg=="reply" and .delivered==false)'
+socketchat log | jq 'select(.msg=="reply" and .delivered==false)'
 
 # Uptime check — last stopped event
-./client.ts log | jq 'select(.msg=="stopped") | {t, uptime_s, reason}'
+socketchat log | jq 'select(.msg=="stopped") | {t, uptime_s, reason}'
 ```
 
 ## Common issues
@@ -148,7 +148,7 @@ Your launcher forked and orphaned the plugin's parent. By design, the plugin sel
 
 Socket path doesn't exist. Check:
 
-- `./client.ts ls` — is there actually an active session?
+- `socketchat ls` — is there actually an active session?
 - Is the client pointing at the right state dir? `SOCKET_CHAT_DIR` must match the server's.
 
 ## Manual test plan

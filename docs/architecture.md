@@ -55,12 +55,12 @@ The plugin **persists across in-process Claude session switches** (e.g. `/clear`
 
 It is **not** Claude's session id. Claude Code does not pass its session id to plugins. The two are independent by default.
 
-For ephemeral-container use, you can align them by setting both to the same value at launch:
+For ephemeral-container use, you can align them by setting both to the same value at launch. Claude's `--session-id` requires a **UUID**, so use `uuidgen` to produce one and reuse it for the plugin's instance id:
 
 ```bash
-ID=task-42
+ID=$(uuidgen)
 SOCKET_CHAT_INSTANCE_ID=$ID \
-  claude --session-id $ID
+  claude --session-id "$ID"
 ```
 
 (Assumes the plugin is already installed from the marketplace. `SOCKET_CHAT_INSTANCE_ID` is inherited from the shell environment into the plugin subprocess.)
@@ -92,8 +92,8 @@ From the agent's perspective, there's one logical channel. Multi-client routing 
 {
   "sessions": [
     {
-      "id": "task-42",
-      "socket": "/Users/.../sessions/task-42.sock",
+      "id": "7c9f2a43-8e1d-4f66-bd42-9a3e7c1b2f88",
+      "socket": "/Users/.../sessions/7c9f2a43-8e1d-4f66-bd42-9a3e7c1b2f88.sock",
       "pid": 12345,
       "ppid": 12340,
       "cwd": "/workspace/myrepo",
@@ -103,7 +103,7 @@ From the agent's perspective, there's one logical channel. Multi-client routing 
 }
 ```
 
-Senders pick a target by whichever attribute makes sense — id, pid of the parent claude, cwd, or none if exactly one session is active. The `client.ts` CLI demonstrates each style.
+Senders pick a target by whichever attribute makes sense — id, pid of the parent claude, cwd, or none if exactly one session is active. The `socketchat` CLI demonstrates each style.
 
 Stale entries (whose pid is no longer running) are purged on every index write.
 

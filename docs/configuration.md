@@ -59,7 +59,7 @@ The plugin is installed from the marketplace; its MCP subprocess inherits the en
 ### Option A: Set in the shell before launch (default)
 
 ```bash
-SOCKET_CHAT_INSTANCE_ID=task-42 \
+SOCKET_CHAT_INSTANCE_ID=7c9f2a43-8e1d-4f66-bd42-9a3e7c1b2f88 \
 SOCKET_CHAT_LOG_FILE=/var/log/socketchat.log \
   claude
 ```

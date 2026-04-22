@@ -12,7 +12,7 @@ Unix-socket channel MCP plugin for Claude Code. External processes on the same h
 - [Getting started](getting-started) — install, register, send a first message
 - [Architecture](architecture) — how it fits into Claude Code, lifecycle, session identity
 - [Wire protocol](protocol) — NDJSON message types, routing, timeouts
-- [CLI reference](cli) — `client.ts` subcommands
+- [CLI reference](cli) — `socketchat` subcommands
 - [Configuration](configuration) — env vars, paths, permissions
 - [Deployment](deployment) — ephemeral containers, unattended mode, id unification
 - [Debugging](debugging) — log file format, common issues, manual tests
@@ -30,7 +30,7 @@ Install the plugin from the marketplace. Inside Claude Code:
 Then push a message from any shell:
 
 ```bash
-./client.ts send '{"hello":"from ops"}'
+socketchat send '{"hello":"from ops"}'
 ```
 
 The agent sees the message as a `<channel source="socketchat" ...>` event and replies via the `reply` tool. The reply comes back on the sender's socket.

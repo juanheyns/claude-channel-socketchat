@@ -9,7 +9,7 @@ Claude Code's [channels](https://code.claude.com/docs/en/channels.md) let extern
 - Any local process with `chmod` access can send
 - No tokens to rotate, no auth handshake
 - Survives in ephemeral containers with a shared tmpfs
-- Trivial to test from the shell (`nc -U`, `client.ts send`)
+- Trivial to test from the shell (`nc -U`, `socketchat send`)
 
 ## What you get
 
@@ -17,31 +17,47 @@ Claude Code's [channels](https://code.claude.com/docs/en/channels.md) let extern
 - Bidirectional NDJSON: senders push JSON messages, Claude replies via the `reply` tool, routed back to the originating connection
 - A discovery index (`~/.claude/channels/socketchat/index.json`) listing active sessions with cwd, pid, and socket path
 - A structured JSON log per session for debugging
-- A companion CLI (`client.ts`) with `ls`, `ping`, `send`, `chat`, and `log` subcommands
+- A companion CLI (`socketchat`) with `ls`, `ping`, `send`, `chat`, and `log` subcommands
 
 ## Install
 
 ### For end users — via the `juanheyns-claude-plugins` marketplace
 
-```bash
-# Inside Claude Code:
-/plugin marketplace add juanheyns/juanheyns-claude-plugins
-/plugin install socketchat@juanheyns-claude-plugins
-```
+1. Add the marketplace and install the plugin. Inside Claude Code:
 
-That's it. Restart Claude if needed. socketchat is loaded as a channel plugin and the server binds a Unix socket under `~/.claude/channels/socketchat/`.
+   ```
+   /plugin marketplace add juanheyns/juanheyns-claude-plugins
+   /plugin install socketchat@juanheyns-claude-plugins
+   ```
 
-Then from a shell:
+2. Exit and re-launch Claude so the channel gets loaded:
 
-```bash
-# Discover the session
-./client.ts ls
+   ```bash
+   claude
+   ```
 
-# Send a message
-./client.ts send '{"hello":"from ops"}'
-```
+   On launch, socketchat binds a Unix socket under `~/.claude/channels/socketchat/sessions/`.
 
-Clone this repo only if you want the companion `client.ts` CLI. The plugin itself is installed by the marketplace.
+3. From any shell, invoke the installed client:
+
+   ```bash
+   # Discover active sessions
+   bun ~/.claude/plugins/cache/juanheyns-claude-plugins/socketchat/*/client.ts ls
+
+   # Send a message
+   bun ~/.claude/plugins/cache/juanheyns-claude-plugins/socketchat/*/client.ts send '{"hello":"from ops"}'
+   ```
+
+   The glob resolves to the currently-installed version dir. For convenience, add a shell function to your `~/.zshrc` / `~/.bashrc`:
+
+   ```bash
+   socketchat() {
+     local dir=$(ls -d ~/.claude/plugins/cache/juanheyns-claude-plugins/socketchat/*/ | sort -V | tail -1)
+     bun "${dir}client.ts" "$@"
+   }
+   ```
+
+   Then just `socketchat ls`, `socketchat send '{}'`, etc.
 
 ### For development — `--plugin-dir`
 
@@ -52,7 +68,7 @@ bun install
 claude --plugin-dir "$PWD"
 ```
 
-Claude Code picks up `.claude-plugin/plugin.json` and `.mcp.json` from the plugin root automatically. Use this path when iterating on the plugin itself.
+Claude Code picks up `.claude-plugin/plugin.json` and `.mcp.json` from the plugin root automatically. Use this path when iterating on the plugin itself. From here, `./client.ts ls` works directly (the repo's own copy).
 
 See [`docs/`](./docs/) for the full picture, including deployment in ephemeral containers, the wire protocol, and a manual test plan.
 

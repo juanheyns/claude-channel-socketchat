@@ -13,17 +13,17 @@ Your orchestrator spins up a container, runs `claude -p` in a resumable loop, an
 
 ### Id unification
 
-Assumes the plugin is already installed from the marketplace. Choose one id per task and apply it consistently:
+Assumes the plugin is already installed from the marketplace. Claude's `--session-id` requires a UUID, so generate one per task and reuse it for the plugin's instance id:
 
 ```bash
-ID=task-42
+ID=$(uuidgen)
 
 SOCKET_CHAT_INSTANCE_ID=$ID \
   claude --session-id "$ID" \
     -p "run the thing"
 ```
 
-`SOCKET_CHAT_INSTANCE_ID` is inherited from the shell env into the plugin subprocess; no flag needed.
+`SOCKET_CHAT_INSTANCE_ID` is inherited from the shell env into the plugin subprocess; no flag needed. Your orchestrator tracks `$ID` and whatever it maps to (task name, run id, etc.) in its own records.
 
 That single id becomes:
 
@@ -55,7 +55,7 @@ When the container is about to go down, your orchestrator signals the agent:
 
 ```bash
 # Orchestrator's shutdown hook
-./client.ts send "$ID" '{"type":"shutdown","deadline":"'"$(date -u +%FT%TZ -d '+30 seconds')"'","note":"container rotation"}' \
+socketchat send "$ID" '{"type":"shutdown","deadline":"'"$(date -u +%FT%TZ -d '+30 seconds')"'","note":"container rotation"}' \
   --timeout 25
 ```
 
@@ -92,10 +92,10 @@ For interactive use the setup is the same, but the channel typically serves:
 - A sidecar pushing status updates
 - An ops script signalling "wrap up, you've been at this for 20 minutes"
 
-The id doesn't need to be pinned — a random UUID is fine. Discover running sessions with `client.ts ls` and target by cwd substring:
+The id doesn't need to be pinned — a random UUID is fine. Discover running sessions with `socketchat ls` and target by cwd substring:
 
 ```bash
-./client.ts send repo-a '{"event":"deploy-queued"}'
+socketchat send repo-a '{"event":"deploy-queued"}'
 ```
 
 ## Distribution surfaces
@@ -158,13 +158,13 @@ Mount `/run/socketchat` from a shared tmpfs so the orchestrator can reach the so
 
 ```bash
 docker run --rm \
-  -e SOCKET_CHAT_INSTANCE_ID=task-42 \
+  -e SOCKET_CHAT_INSTANCE_ID=7c9f2a43-8e1d-4f66-bd42-9a3e7c1b2f88 \
   -e ANTHROPIC_API_KEY=... \
   -v /tmp/socketchat-shared:/run/socketchat \
   my-claude-image
 ```
 
-Then from the host, `./client.ts send task-42 '{...}'` (with `SOCKET_CHAT_DIR=/tmp/socketchat-shared`) reaches inside the container.
+Then from the host, `socketchat send 7c9f2a43-8e1d-4f66-bd42-9a3e7c1b2f88 '{...}'` (with `SOCKET_CHAT_DIR=/tmp/socketchat-shared`) reaches inside the container.
 
 ## CLAUDE.md snippet
 

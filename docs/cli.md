@@ -5,9 +5,9 @@ title: CLI reference
 
 # CLI reference
 
-`client.ts` is a companion tool for interacting with running socketchat plugins. It reads the index, resolves the target, opens a Unix socket, and speaks the [wire protocol](protocol).
+`socketchat` is a companion tool for interacting with running socketchat plugins. It reads the index, resolves the target, opens a Unix socket, and speaks the [wire protocol](protocol).
 
-All commands support `--help` implicitly — run `client.ts` with no args to see usage.
+All commands support `--help` implicitly — run `socketchat` with no args to see usage.
 
 ## Target resolution
 
@@ -26,7 +26,7 @@ Stale entries (dead pids) are filtered out before resolution.
 ## `ls` — list active sessions
 
 ```
-client.ts ls [pattern] [--json]
+socketchat ls [pattern] [--json]
 ```
 
 Lists all active plugin instances, optionally filtered by a substring that matches id or cwd.
@@ -34,30 +34,30 @@ Lists all active plugin instances, optionally filtered by a substring that match
 **Human-readable output:**
 
 ```
-$ client.ts ls
-task-42    12s  pid=4711  cwd=/workspace/repo
+$ socketchat ls
+7c9f2a43-8e1d-4f66-bd42-9a3e7c1b2f88    12s  pid=4711  cwd=/workspace/repo
 another    3m   pid=5823  cwd=/home/user/proj
 ```
 
 **Machine-readable:**
 
 ```
-$ client.ts ls --json | jq '.[].id'
-"task-42"
+$ socketchat ls --json | jq '.[].id'
+"7c9f2a43-8e1d-4f66-bd42-9a3e7c1b2f88"
 "another"
 ```
 
 ## `ping` — health check
 
 ```
-client.ts ping [target] [--timeout SECS]
+socketchat ping [target] [--timeout SECS]
 ```
 
 Sends `{"type":"ping"}`, waits for `{"type":"pong"}`, prints round-trip time. Does not reach Claude — useful for script readiness checks.
 
 ```
-$ client.ts ping task-42
-pong from task-42 (2ms)
+$ socketchat ping 7c9f2a43-8e1d-4f66-bd42-9a3e7c1b2f88
+pong from 7c9f2a43-8e1d-4f66-bd42-9a3e7c1b2f88 (2ms)
 ```
 
 Default timeout: 5 seconds. Exit code 0 on pong, 1 on timeout or connection failure.
@@ -65,7 +65,7 @@ Default timeout: 5 seconds. Exit code 0 on pong, 1 on timeout or connection fail
 ## `send` — one-shot message
 
 ```
-client.ts send [target] <json|-> [--no-wait] [--timeout SECS]
+socketchat send [target] <json|-> [--no-wait] [--timeout SECS]
 ```
 
 Sends a channel message and waits for the agent's reply.
@@ -84,16 +84,16 @@ Sends a channel message and waits for the agent's reply.
 
 ```bash
 # Basic send, wait up to 60s for Claude to reply
-client.ts send '{"hello":"world"}'
+socketchat send '{"hello":"world"}'
 
 # Pipe body from stdin
-cat payload.json | client.ts send -
+cat payload.json | socketchat send -
 
 # Target a specific session, short timeout
-client.ts send task-42 '{"action":"shutdown"}' --timeout 10
+socketchat send 7c9f2a43-8e1d-4f66-bd42-9a3e7c1b2f88 '{"action":"shutdown"}' --timeout 10
 
 # Fire and forget (exits after ack)
-client.ts send '{"event":"ping"}' --no-wait
+socketchat send '{"event":"ping"}' --no-wait
 ```
 
 **Exit codes:**
@@ -109,15 +109,15 @@ client.ts send '{"event":"ping"}' --no-wait
 ## `chat` — interactive REPL
 
 ```
-client.ts chat [target]
+socketchat chat [target]
 ```
 
 Opens a persistent connection and reads JSON lines from stdin, printing every received server message prefixed with `<`. Exits on Ctrl+D or the server closing the connection.
 
 ```
-$ client.ts chat
-connected to task-42
-socket:   /Users/.../sessions/task-42.sock
+$ socketchat chat
+connected to 7c9f2a43-8e1d-4f66-bd42-9a3e7c1b2f88
+socket:   /Users/.../sessions/7c9f2a43-8e1d-4f66-bd42-9a3e7c1b2f88.sock
 cwd:      /workspace/repo
 type JSON lines; Ctrl+D to exit.
 
@@ -133,20 +133,20 @@ Invalid JSON input is rejected client-side with a message on stderr; the line is
 ## `log` — view the session log
 
 ```
-client.ts log [target] [-f | --follow]
+socketchat log [target] [-f | --follow]
 ```
 
 Prints (or tails with `-f`) the plugin's structured log file.
 
 ```bash
 # Print the whole log
-client.ts log task-42
+socketchat log 7c9f2a43-8e1d-4f66-bd42-9a3e7c1b2f88
 
 # Follow new events
-client.ts log task-42 -f
+socketchat log 7c9f2a43-8e1d-4f66-bd42-9a3e7c1b2f88 -f
 
 # Filter with jq
-client.ts log task-42 -f | jq 'select(.msg=="message_in" or .msg=="reply")'
+socketchat log 7c9f2a43-8e1d-4f66-bd42-9a3e7c1b2f88 -f | jq 'select(.msg=="message_in" or .msg=="reply")'
 ```
 
 Log path: `~/.claude/channels/socketchat/logs/<instance-id>.log`. See [Debugging](debugging) for the event schema.
