@@ -1,7 +1,7 @@
 {
   "name": "socketchat",
   "description": "Unix-socket channel for Claude Code — host-local IPC for orchestrators, approval gates, and sidecars. Filesystem permissions replace tokens; no network config.",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "keywords": [
     "socketchat",
     "unix-socket",
