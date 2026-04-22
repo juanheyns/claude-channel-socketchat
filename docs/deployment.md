@@ -99,28 +99,35 @@ The id doesn't need to be pinned — a random UUID is fine. Discover running ses
 
 ## Packaging for distribution
 
-Three deployment levels, simplest first:
+socketchat ships both as a raw directory and as a proper Claude Code plugin, so there are three distribution surfaces — pick whichever matches your users' workflow.
 
-### Level 1 — raw MCP server (dev or single-host)
+### Level 1 — `--plugin-dir` against a local checkout
 
-Users `git clone`, `bun install`, `claude mcp add`. That's it. Shipped.
-
-### Level 2 — custom marketplace
-
-Create a git repo with a marketplace manifest and list socketchat in it. Users:
+For dev, or a single-host one-off:
 
 ```bash
-claude plugin marketplace add <your-marketplace-url>
-claude plugin install socketchat
+git clone https://github.com/juanheyns/socketchat
+cd socketchat
+bun install
+claude --plugin-dir "$PWD"
 ```
 
-Requires conforming to Claude Code's plugin manifest format.
+No marketplace needed; the `.claude-plugin/plugin.json` and `.mcp.json` are read directly from the checkout.
 
-### Level 3 — official marketplace
+### Level 2 — the `juanheyns-claude-plugins` marketplace (current default)
 
-Submit to `claude-plugins-official`. Anthropic's review process applies.
+This is how end users install. socketchat is listed in the [`juanheyns-claude-plugins`](https://github.com/juanheyns/juanheyns-claude-plugins) marketplace catalog. Users run:
 
-For internal teams, **Level 1 or 2** is usually right. The current layout of this repo supports Level 1 out of the box.
+```
+/plugin marketplace add juanheyns/juanheyns-claude-plugins
+/plugin install socketchat@juanheyns-claude-plugins
+```
+
+Versions are pinned via `source.ref` in the marketplace catalog. See [Releasing](releasing) for the automated publication flow — tag `v*` in this repo and GitHub Actions updates the marketplace automatically.
+
+### Level 3 — official Anthropic marketplace
+
+Submit via [claude.ai/settings/plugins/submit](https://claude.ai/settings/plugins/submit). Anthropic's review process applies. Not currently done; the `juanheyns-claude-plugins` marketplace is the authoritative source.
 
 ## Docker / container image
 

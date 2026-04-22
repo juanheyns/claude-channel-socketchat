@@ -14,35 +14,41 @@ title: Getting started
 
 ## Install
 
-Clone and install dependencies:
+### Recommended: via the marketplace
+
+The fastest way to install socketchat is through the [`juanheyns-claude-plugins`](https://github.com/juanheyns/juanheyns-claude-plugins) marketplace. Inside Claude Code:
+
+```
+/plugin marketplace add juanheyns/juanheyns-claude-plugins
+/plugin install socketchat@juanheyns-claude-plugins
+```
+
+Claude Code fetches the plugin, registers its MCP server, and activates it as a channel. The socket binds at `~/.claude/channels/socketchat/sessions/<instance-id>.sock` on first session.
+
+To use the companion CLI (`client.ts`) for `ls`, `ping`, `send`, `chat`, and `log`, clone this repo separately:
 
 ```bash
-git clone <your-repo-url> socketchat
+git clone https://github.com/juanheyns/socketchat
+cd socketchat
+bun install     # for the client's deps
+```
+
+The CLI reads `~/.claude/channels/socketchat/index.json` to find running plugins — it works against whatever socketchat instances are active, regardless of whether you installed the plugin via marketplace or locally.
+
+### For plugin development: `--plugin-dir`
+
+If you're iterating on the plugin code itself, bypass the marketplace and load the local checkout directly:
+
+```bash
+git clone https://github.com/juanheyns/socketchat
 cd socketchat
 bun install
+claude --plugin-dir "$PWD"
 ```
 
-## Launch Claude with the plugin loaded
+Claude Code reads `.claude-plugin/plugin.json` and `.mcp.json` from the plugin root and spawns the server from your local copy. Any changes to `server.ts` are picked up on next Claude start (or run `/reload-plugins`).
 
-socketchat is a packaged Claude Code plugin. The easiest way to run it is with `--plugin-dir`:
-
-```bash
-claude --plugin-dir /path/to/socketchat
-```
-
-Claude Code reads `.claude-plugin/plugin.json` and `.mcp.json` from the plugin root and registers the MCP server automatically. The server appears in Claude's tool list as the `socketchat` channel.
-
-### Alternative: install via a marketplace
-
-If you're distributing socketchat through a plugin marketplace (either your own or the official one), users install with:
-
-```bash
-claude plugin install socketchat@<marketplace-name>
-```
-
-Then launch normally — Claude Code auto-loads installed plugins. See [Deployment](deployment) for packaging into a marketplace.
-
-### Alternative: manual MCP server registration
+### Manual MCP registration (escape hatch)
 
 Skip the plugin manifest entirely and register the server by hand:
 
@@ -51,7 +57,7 @@ claude mcp add socketchat bun "$PWD/server.ts"
 claude --dangerously-load-development-channels server:socketchat
 ```
 
-Works, but you'll lose the plugin niceties (versioning, keyword discovery, marketplace install).
+Works, but you lose the plugin niceties (versioning, keyword discovery, marketplace update flow). Use only for quick one-off testing.
 
 ## First round-trip
 

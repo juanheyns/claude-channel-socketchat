@@ -19,20 +19,40 @@ Claude Code's [channels](https://code.claude.com/docs/en/channels.md) let extern
 - A structured JSON log per session for debugging
 - A companion CLI (`client.ts`) with `ls`, `ping`, `send`, `chat`, and `log` subcommands
 
-## Quick start
+## Install
+
+### For end users — via the `juanheyns-claude-plugins` marketplace
 
 ```bash
-# 1. Install deps (one-time)
-bun install
+# Inside Claude Code:
+/plugin marketplace add juanheyns/juanheyns-claude-plugins
+/plugin install socketchat@juanheyns-claude-plugins
+```
 
-# 2. Start Claude with the plugin loaded
-claude --plugin-dir "$PWD"
+That's it. Restart Claude if needed. socketchat is loaded as a channel plugin and the server binds a Unix socket under `~/.claude/channels/socketchat/`.
 
-# 3. From another terminal, send a message
+Then from a shell:
+
+```bash
+# Discover the session
+./client.ts ls
+
+# Send a message
 ./client.ts send '{"hello":"from ops"}'
 ```
 
-This is a packaged Claude Code plugin — it includes `.claude-plugin/plugin.json` and `.mcp.json`, so `--plugin-dir` picks up the MCP server automatically. No `claude mcp add` needed.
+Clone this repo only if you want the companion `client.ts` CLI. The plugin itself is installed by the marketplace.
+
+### For development — `--plugin-dir`
+
+```bash
+git clone https://github.com/juanheyns/socketchat
+cd socketchat
+bun install
+claude --plugin-dir "$PWD"
+```
+
+Claude Code picks up `.claude-plugin/plugin.json` and `.mcp.json` from the plugin root automatically. Use this path when iterating on the plugin itself.
 
 See [`docs/`](./docs/) for the full picture, including deployment in ephemeral containers, the wire protocol, and a manual test plan.
 
