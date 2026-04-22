@@ -22,28 +22,36 @@ cd socketchat
 bun install
 ```
 
-## Register with Claude Code
+## Launch Claude with the plugin loaded
 
-Register the plugin as an MCP server. Use an absolute path so it resolves regardless of cwd:
+socketchat is a packaged Claude Code plugin. The easiest way to run it is with `--plugin-dir`:
+
+```bash
+claude --plugin-dir /path/to/socketchat
+```
+
+Claude Code reads `.claude-plugin/plugin.json` and `.mcp.json` from the plugin root and registers the MCP server automatically. The server appears in Claude's tool list as the `socketchat` channel.
+
+### Alternative: install via a marketplace
+
+If you're distributing socketchat through a plugin marketplace (either your own or the official one), users install with:
+
+```bash
+claude plugin install socketchat@<marketplace-name>
+```
+
+Then launch normally — Claude Code auto-loads installed plugins. See [Deployment](deployment) for packaging into a marketplace.
+
+### Alternative: manual MCP server registration
+
+Skip the plugin manifest entirely and register the server by hand:
 
 ```bash
 claude mcp add socketchat bun "$PWD/server.ts"
-```
-
-This writes an entry into your Claude Code config. Verify:
-
-```bash
-claude mcp list
-# socketchat: bun /absolute/path/to/server.ts
-```
-
-## Launch Claude with the channel
-
-```bash
 claude --dangerously-load-development-channels server:socketchat
 ```
 
-The flag is called "dangerously" because it loads an un-packaged MCP server as a channel. It's the normal path during development and for self-hosted plugins.
+Works, but you'll lose the plugin niceties (versioning, keyword discovery, marketplace install).
 
 ## First round-trip
 

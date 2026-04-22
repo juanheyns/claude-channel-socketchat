@@ -1,0 +1,75 @@
+name: Publish to marketplace
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to sync (e.g. v0.1.0). Must already exist in this repo.'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout socketchat at the tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Extract and verify version
+        id: v
+        run: |
+          TAG="${{ inputs.tag || github.ref_name }}"
+          VERSION="${TAG#v}"
+          PLUGIN_VERSION=$(jq -r .version .claude-plugin/plugin.json)
+          if [ "$PLUGIN_VERSION" != "$VERSION" ]; then
+            echo "::error::Tag $TAG does not match plugin.json version $PLUGIN_VERSION. Bump plugin.json before tagging."
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Tag $TAG matches plugin.json version $VERSION"
+
+      - name: Checkout marketplace
+        uses: actions/checkout@v4
+        with:
+          repository: juanheyns/juanheyns-claude-plugins
+          token: ${{ secrets.MARKETPLACE_SYNC_TOKEN }}
+          path: marketplace
+
+      - name: Update catalog entry
+        working-directory: marketplace
+        run: |
+          jq --arg version "${{ steps.v.outputs.version }}" \
+             --arg ref "${{ steps.v.outputs.tag }}" '
+            .plugins |= map(
+              if .name == "socketchat"
+              then .version = $version
+                 | .source.ref = $ref
+              else .
+              end
+            )
+          ' .claude-plugin/marketplace.json > .claude-plugin/marketplace.json.tmp
+          mv .claude-plugin/marketplace.json.tmp .claude-plugin/marketplace.json
+          echo "--- updated marketplace.json entry ---"
+          jq '.plugins[] | select(.name=="socketchat")' .claude-plugin/marketplace.json
+
+      - name: Commit and push
+        working-directory: marketplace
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .claude-plugin/marketplace.json
+          if git diff --cached --quiet; then
+            echo "No changes — marketplace already up to date"
+            exit 0
+          fi
+          git commit -m "socketchat ${{ steps.v.outputs.tag }}"
+          git push

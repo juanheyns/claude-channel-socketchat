@@ -16,6 +16,7 @@ Unix-socket channel MCP plugin for Claude Code. External processes on the same h
 - [Configuration](configuration) — env vars, paths, permissions
 - [Deployment](deployment) — ephemeral containers, unattended mode, id unification
 - [Debugging](debugging) — log file format, common issues, manual tests
+- [Releasing](releasing) — tag workflow that auto-syncs to the marketplace
 
 ## 60-second overview
 

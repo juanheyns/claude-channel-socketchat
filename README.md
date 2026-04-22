@@ -22,18 +22,17 @@ Claude Code's [channels](https://code.claude.com/docs/en/channels.md) let extern
 ## Quick start
 
 ```bash
-# 1. Install deps
+# 1. Install deps (one-time)
 bun install
 
-# 2. Register as an MCP server
-claude mcp add socketchat bun "$PWD/server.ts"
+# 2. Start Claude with the plugin loaded
+claude --plugin-dir "$PWD"
 
-# 3. Start Claude with the channel loaded
-claude --dangerously-load-development-channels server:socketchat
-
-# 4. From another terminal, send a message
+# 3. From another terminal, send a message
 ./client.ts send '{"hello":"from ops"}'
 ```
+
+This is a packaged Claude Code plugin — it includes `.claude-plugin/plugin.json` and `.mcp.json`, so `--plugin-dir` picks up the MCP server automatically. No `claude mcp add` needed.
 
 See [`docs/`](./docs/) for the full picture, including deployment in ephemeral containers, the wire protocol, and a manual test plan.
 
