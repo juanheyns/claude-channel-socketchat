@@ -13,16 +13,17 @@ Your orchestrator spins up a container, runs `claude -p` in a resumable loop, an
 
 ### Id unification
 
-Choose one id per task and apply it consistently:
+Assumes the plugin is already installed from the marketplace. Choose one id per task and apply it consistently:
 
 ```bash
 ID=task-42
 
 SOCKET_CHAT_INSTANCE_ID=$ID \
   claude --session-id "$ID" \
-    --dangerously-load-development-channels server:socketchat \
     -p "run the thing"
 ```
+
+`SOCKET_CHAT_INSTANCE_ID` is inherited from the shell env into the plugin subprocess; no flag needed.
 
 That single id becomes:
 
@@ -97,26 +98,11 @@ The id doesn't need to be pinned — a random UUID is fine. Discover running ses
 ./client.ts send repo-a '{"event":"deploy-queued"}'
 ```
 
-## Packaging for distribution
+## Distribution surfaces
 
-socketchat ships both as a raw directory and as a proper Claude Code plugin, so there are three distribution surfaces — pick whichever matches your users' workflow.
+### Default — the `juanheyns-claude-plugins` marketplace
 
-### Level 1 — `--plugin-dir` against a local checkout
-
-For dev, or a single-host one-off:
-
-```bash
-git clone https://github.com/juanheyns/claude-channel-socketchat socketchat
-cd socketchat
-bun install
-claude --plugin-dir "$PWD"
-```
-
-No marketplace needed; the `.claude-plugin/plugin.json` and `.mcp.json` are read directly from the checkout.
-
-### Level 2 — the `juanheyns-claude-plugins` marketplace (current default)
-
-This is how end users install. socketchat is listed in the [`juanheyns-claude-plugins`](https://github.com/juanheyns/juanheyns-claude-plugins) marketplace catalog. Users run:
+This is how users install socketchat. From inside Claude Code:
 
 ```
 /plugin marketplace add juanheyns/juanheyns-claude-plugins
@@ -125,29 +111,47 @@ This is how end users install. socketchat is listed in the [`juanheyns-claude-pl
 
 Versions are pinned via `source.ref` in the marketplace catalog. See [Releasing](releasing) for the automated publication flow — tag `v*` in this repo and GitHub Actions updates the marketplace automatically.
 
-### Level 3 — official Anthropic marketplace
+### Alternative — `--plugin-dir` against a local checkout
 
-Submit via [claude.ai/settings/plugins/submit](https://claude.ai/settings/plugins/submit). Anthropic's review process applies. Not currently done; the `juanheyns-claude-plugins` marketplace is the authoritative source.
+For plugin development, or to run a pre-release build without publishing:
+
+```bash
+git clone https://github.com/juanheyns/claude-channel-socketchat socketchat
+cd socketchat
+bun install
+claude --plugin-dir "$PWD"
+```
+
+Claude Code reads `.claude-plugin/plugin.json` and `.mcp.json` directly from the checkout. Use this only while iterating on the plugin code.
+
+### Future — official Anthropic marketplace
+
+Submit via [claude.ai/settings/plugins/submit](https://claude.ai/settings/plugins/submit). Not currently done; the `juanheyns-claude-plugins` marketplace is the authoritative source.
 
 ## Docker / container image
 
-A minimal image:
+A minimal image. The plugin gets installed from the marketplace at build time, so the container starts with socketchat ready to go:
 
 ```dockerfile
 FROM oven/bun:1
-WORKDIR /app
-COPY package.json bun.lock ./
-RUN bun install --production
-COPY server.ts client.ts ./
-
-# Claude Code itself
 RUN curl -fsSL https://claude.ai/install.sh | bash
+
+# Install the plugin at build time so runtime startup is fast and offline-capable.
+RUN claude plugin marketplace add juanheyns/juanheyns-claude-plugins \
+ && claude plugin install socketchat@juanheyns-claude-plugins
 
 ENV SOCKET_CHAT_DIR=/run/socketchat
 VOLUME /run/socketchat
 
 # Override at runtime: SOCKET_CHAT_INSTANCE_ID, ANTHROPIC_API_KEY, --session-id, etc.
-ENTRYPOINT ["claude", "--dangerously-load-development-channels", "server:socketchat"]
+ENTRYPOINT ["claude"]
+```
+
+If you need full offline reproducibility (no network reach at build time either), clone the plugin into the image and load it with `--plugin-dir`:
+
+```dockerfile
+COPY --from=plugin-src . /opt/socketchat
+ENTRYPOINT ["claude", "--plugin-dir", "/opt/socketchat"]
 ```
 
 Mount `/run/socketchat` from a shared tmpfs so the orchestrator can reach the socket:

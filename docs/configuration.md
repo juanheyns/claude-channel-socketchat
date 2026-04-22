@@ -52,49 +52,28 @@ The socket's `0660` permission means any member of the group can read/write.
 
 The plugin does not perform `SO_PEERCRED` peer credential checks. If you need to reject specific UIDs even within the shared group, add the check in the `onConnection` handler. For most use cases, group membership is sufficient.
 
-## Registering with Claude Code
+## Passing env vars to the plugin
 
-Passing env vars to a registered MCP server:
+The plugin is installed from the marketplace; its MCP subprocess inherits the env of the Claude process that spawned it. So setting vars is just a matter of where you set them in the shell that launches `claude`.
 
-```bash
-claude mcp add socketchat bun /path/to/server.ts
-```
-
-This registration doesn't accept env vars directly. To set them, either:
-
-### Option A: Wrap in a shell script
-
-```bash
-cat > /usr/local/bin/socketchat-server <<'EOF'
-#!/bin/bash
-export SOCKET_CHAT_INSTANCE_ID="${CLAUDE_TASK_ID:-$(uuidgen)}"
-exec bun /path/to/server.ts
-EOF
-chmod +x /usr/local/bin/socketchat-server
-
-claude mcp remove socketchat
-claude mcp add socketchat /usr/local/bin/socketchat-server
-```
-
-### Option B: Set env before launching Claude
+### Option A: Set in the shell before launch (default)
 
 ```bash
 SOCKET_CHAT_INSTANCE_ID=task-42 \
-  claude --dangerously-load-development-channels server:socketchat
+SOCKET_CHAT_LOG_FILE=/var/log/socketchat.log \
+  claude
 ```
 
-Env vars in the Claude process environment propagate to MCP subprocesses.
+Works for per-invocation overrides. Ideal for orchestrators and scripts.
 
-### Option C: Edit settings.json
+### Option B: Persistent per-user config in settings.json
 
-In `~/.claude/settings.json`:
+In `~/.claude/settings.json`, override the plugin's MCP server entry with an `env` block:
 
 ```json
 {
   "mcpServers": {
     "socketchat": {
-      "command": "bun",
-      "args": ["/absolute/path/to/server.ts"],
       "env": {
         "SOCKET_CHAT_LOG_FILE": "/var/log/socketchat.log"
       }
@@ -103,7 +82,20 @@ In `~/.claude/settings.json`:
 }
 ```
 
-The `env` block is per-server and overrides/augments inherited vars.
+Claude Code merges this on top of the plugin's `.mcp.json` definition. Only the `env` key is overridden; `command` and `args` are inherited from the plugin.
+
+### Option C: Wrap Claude in a shell script
+
+For complex defaults (e.g. derive instance id from a CI variable):
+
+```bash
+cat > /usr/local/bin/claude-with-socketchat <<'EOF'
+#!/bin/bash
+export SOCKET_CHAT_INSTANCE_ID="${CLAUDE_TASK_ID:-$(uuidgen)}"
+exec claude "$@"
+EOF
+chmod +x /usr/local/bin/claude-with-socketchat
+```
 
 ## Tuning guidance
 

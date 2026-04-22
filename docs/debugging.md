@@ -98,15 +98,13 @@ With `jq`:
 
 ## Common issues
 
-### "no MCP server configured with that name"
+### Plugin install fails / "repository not found"
 
-You launched with `--dangerously-load-development-channels server:<name>` but `<name>` isn't in your MCP server config. Register first:
+You tried `/plugin install socketchat@juanheyns-claude-plugins` and got a clone error. Usually one of:
 
-```bash
-claude mcp add socketchat bun /absolute/path/to/server.ts
-```
-
-Then launch with `server:socketchat`. The argument is the name you registered, not a path.
+- Marketplace not added: `/plugin marketplace add juanheyns/juanheyns-claude-plugins` first.
+- Stale marketplace cache: `/plugin marketplace update juanheyns-claude-plugins`.
+- Private plugin repo without credentials: check your git credential helper, or use HTTPS with a token.
 
 ### Claude doesn't see `<channel>` tags
 
@@ -144,7 +142,7 @@ The index is compacted on every write — stale entries vanish once a new sessio
 
 ### Plugin exits immediately with `parent_died`
 
-Your launcher forked and orphaned the plugin's parent. By design, the plugin self-terminates when `process.ppid` becomes 1 (reparented to init) — this protects against runaway subprocesses after Claude crashes. Launch the plugin as a direct child of the Claude process (what `claude mcp add` does by default) and this won't happen.
+Your launcher forked and orphaned the plugin's parent. By design, the plugin self-terminates when `process.ppid` becomes 1 (reparented to init) — this protects against runaway subprocesses after Claude crashes. The plugin should be spawned as a direct child of the Claude process, which is what happens by default with a marketplace install.
 
 ### "connect failed: ENOENT" from the client
 

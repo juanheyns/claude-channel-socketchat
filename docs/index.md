@@ -20,19 +20,22 @@ Unix-socket channel MCP plugin for Claude Code. External processes on the same h
 
 ## 60-second overview
 
+Install the plugin from the marketplace. Inside Claude Code:
+
+```
+/plugin marketplace add juanheyns/juanheyns-claude-plugins
+/plugin install socketchat@juanheyns-claude-plugins
+```
+
+Then push a message from any shell:
+
 ```bash
-# Install + register
-bun install
-claude mcp add socketchat bun "$PWD/server.ts"
-
-# Start Claude with the channel
-claude --dangerously-load-development-channels server:socketchat
-
-# In another terminal, push a message in
 ./client.ts send '{"hello":"from ops"}'
 ```
 
 The agent sees the message as a `<channel source="socketchat" ...>` event and replies via the `reply` tool. The reply comes back on the sender's socket.
+
+See [Getting started](getting-started) for the `--plugin-dir` development path, manual MCP registration, and prerequisite details.
 
 ## When to use it
 

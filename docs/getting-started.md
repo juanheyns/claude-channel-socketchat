@@ -100,11 +100,10 @@ Each line you type must be valid JSON. Responses (acks, replies) print with a `<
 
 ## Pin the instance id
 
-Pass `SOCKET_CHAT_INSTANCE_ID` to get a predictable socket path:
+Pass `SOCKET_CHAT_INSTANCE_ID` in the shell env to get a predictable socket path:
 
 ```bash
-SOCKET_CHAT_INSTANCE_ID=task-42 \
-  claude --dangerously-load-development-channels server:socketchat
+SOCKET_CHAT_INSTANCE_ID=task-42 claude
 ```
 
 Now the socket is at `~/.claude/channels/socketchat/sessions/task-42.sock`. Combine with `claude --session-id task-42` for full id unification — see [deployment](deployment) for why.

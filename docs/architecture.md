@@ -60,9 +60,10 @@ For ephemeral-container use, you can align them by setting both to the same valu
 ```bash
 ID=task-42
 SOCKET_CHAT_INSTANCE_ID=$ID \
-  claude --session-id $ID \
-    --dangerously-load-development-channels server:socketchat
+  claude --session-id $ID
 ```
+
+(Assumes the plugin is already installed from the marketplace. `SOCKET_CHAT_INSTANCE_ID` is inherited from the shell environment into the plugin subprocess.)
 
 Now the same `$ID` is:
 - Claude's transcript filename: `~/.claude/projects/<cwd-key>/$ID.jsonl`
