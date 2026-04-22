@@ -106,7 +106,7 @@ socketchat ships both as a raw directory and as a proper Claude Code plugin, so 
 For dev, or a single-host one-off:
 
 ```bash
-git clone https://github.com/juanheyns/socketchat
+git clone https://github.com/juanheyns/claude-channel-socketchat socketchat
 cd socketchat
 bun install
 claude --plugin-dir "$PWD"

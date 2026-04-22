@@ -46,7 +46,7 @@ Clone this repo only if you want the companion `client.ts` CLI. The plugin itsel
 ### For development — `--plugin-dir`
 
 ```bash
-git clone https://github.com/juanheyns/socketchat
+git clone https://github.com/juanheyns/claude-channel-socketchat socketchat
 cd socketchat
 bun install
 claude --plugin-dir "$PWD"

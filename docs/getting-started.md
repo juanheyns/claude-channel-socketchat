@@ -28,7 +28,7 @@ Claude Code fetches the plugin, registers its MCP server, and activates it as a 
 To use the companion CLI (`client.ts`) for `ls`, `ping`, `send`, `chat`, and `log`, clone this repo separately:
 
 ```bash
-git clone https://github.com/juanheyns/socketchat
+git clone https://github.com/juanheyns/claude-channel-socketchat socketchat
 cd socketchat
 bun install     # for the client's deps
 ```
@@ -40,7 +40,7 @@ The CLI reads `~/.claude/channels/socketchat/index.json` to find running plugins
 If you're iterating on the plugin code itself, bypass the marketplace and load the local checkout directly:
 
 ```bash
-git clone https://github.com/juanheyns/socketchat
+git clone https://github.com/juanheyns/claude-channel-socketchat socketchat
 cd socketchat
 bun install
 claude --plugin-dir "$PWD"
